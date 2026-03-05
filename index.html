@@ -1,604 +1,567 @@
 <!DOCTYPE html>
 <html lang="lt">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sarašiukas</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NS40 — Premium Liquid Skoniai</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --neon-cyan:    #00f5ff;
+    --neon-purple:  #bf00ff;
+    --neon-pink:    #ff0080;
+    --neon-red:     #ff2040;
+    --neon-blue:    #0057ff;
+    --bg-deep:      #020408;
+    --bg-card:      rgba(255,255,255,0.03);
+    --glass-border: rgba(0,245,255,0.15);
+    --text-dim:     rgba(255,255,255,0.5);
+  }
 
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: #0a0a0a;
-            overflow-x: hidden;
-            color: white;
-        }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
 
-        /* Loading Screen */
-        #loading-screen {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: radial-gradient(circle at center, #1a1a2e 0%, #0a0a0a 100%);
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            z-index: 9999;
-            transition: all 1s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-        }
+  body {
+    font-family: 'Rajdhani', sans-serif;
+    background: var(--bg-deep);
+    color: #fff;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
 
-        #loading-screen.fade-out {
-            opacity: 0;
-            transform: scale(1.2);
-            pointer-events: none;
-        }
+  /* ── LOADING SCREEN ── */
+  #loader {
+    position: fixed; inset: 0; z-index: 9999;
+    background: var(--bg-deep);
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    transition: opacity 0.8s ease, visibility 0.8s ease;
+  }
+  #loader.hide { opacity: 0; visibility: hidden; }
 
-        .loading-animation {
-            position: relative;
-            width: 200px;
-            height: 200px;
-            margin-bottom: 40px;
-        }
+  .loader-ring {
+    width: 90px; height: 90px; border-radius: 50%;
+    border: 2px solid transparent;
+    border-top-color: var(--neon-cyan);
+    border-right-color: var(--neon-purple);
+    animation: spin 1.2s linear infinite;
+    filter: drop-shadow(0 0 12px var(--neon-cyan));
+    margin-bottom: 28px;
+    position: relative;
+  }
+  .loader-ring::before {
+    content: ''; position: absolute; inset: 6px; border-radius: 50%;
+    border: 2px solid transparent;
+    border-bottom-color: var(--neon-pink);
+    animation: spin 0.8s linear infinite reverse;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
 
-        .vapor-circle {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            width: 100%;
-            height: 100%;
-            border-radius: 50%;
-            border: 4px solid transparent;
-            border-top-color: #00f5ff;
-            border-right-color: #ff00ff;
-            transform: translate(-50%, -50%);
-            animation: spin 2s cubic-bezier(0.68, -0.55, 0.265, 1.55) infinite;
-        }
+  .loader-text {
+    font-family: 'Orbitron', monospace;
+    font-size: clamp(0.9rem, 3vw, 1.2rem);
+    letter-spacing: 0.35em; text-transform: uppercase;
+    color: var(--neon-cyan);
+    animation: textPulse 1.2s ease-in-out infinite;
+    filter: drop-shadow(0 0 10px var(--neon-cyan));
+  }
+  @keyframes textPulse {
+    0%,100% { opacity: 0.5; } 50% { opacity: 1; }
+  }
 
-        .vapor-circle:nth-child(2) {
-            width: 80%;
-            height: 80%;
-            border-top-color: #ff00ff;
-            border-right-color: #00ff88;
-            animation-duration: 1.5s;
-            animation-direction: reverse;
-        }
+  .loader-dots { display: flex; gap: 8px; margin-top: 20px; }
+  .loader-dots span {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--neon-purple);
+    animation: dotBounce 1.2s ease-in-out infinite;
+    filter: drop-shadow(0 0 6px var(--neon-purple));
+  }
+  .loader-dots span:nth-child(2) { animation-delay:0.2s; background:var(--neon-cyan);  filter:drop-shadow(0 0 6px var(--neon-cyan)); }
+  .loader-dots span:nth-child(3) { animation-delay:0.4s; background:var(--neon-pink);  filter:drop-shadow(0 0 6px var(--neon-pink)); }
+  @keyframes dotBounce {
+    0%,80%,100% { transform:translateY(0); opacity:0.4; }
+    40%         { transform:translateY(-10px); opacity:1; }
+  }
 
-        .vapor-circle:nth-child(3) {
-            width: 60%;
-            height: 60%;
-            border-top-color: #00ff88;
-            border-right-color: #ffaa00;
-            animation-duration: 1s;
-        }
+  /* ── CANVAS ── */
+  #bgCanvas { position:fixed; inset:0; z-index:0; pointer-events:none; }
 
-        .vapor-glow {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            width: 150px;
-            height: 150px;
-            background: radial-gradient(circle, rgba(0, 245, 255, 0.4), transparent 70%);
-            border-radius: 50%;
-            transform: translate(-50%, -50%);
-            animation: pulse-glow 2s ease-in-out infinite;
-            filter: blur(20px);
-        }
+  /* ── NOISE ── */
+  body::before {
+    content:''; position:fixed; inset:0; z-index:1;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+    pointer-events:none; opacity:0.4;
+  }
 
-        @keyframes spin {
-            0% { 
-                transform: translate(-50%, -50%) rotate(0deg) scale(1);
-            }
-            50% {
-                transform: translate(-50%, -50%) rotate(180deg) scale(1.1);
-            }
-            100% { 
-                transform: translate(-50%, -50%) rotate(360deg) scale(1);
-            }
-        }
+  #main { position:relative; z-index:2; }
 
-        @keyframes pulse-glow {
-            0%, 100% { 
-                opacity: 0.6;
-                transform: translate(-50%, -50%) scale(1);
-            }
-            50% { 
-                opacity: 1;
-                transform: translate(-50%, -50%) scale(1.3);
-            }
-        }
+  /* ── HEADER ── */
+  header {
+    text-align: center;
+    padding: clamp(50px,10vw,100px) 20px clamp(30px,6vw,60px);
+  }
+  .price-tag {
+    display: inline-block;
+    font-family: 'Orbitron', monospace;
+    font-size: clamp(0.75rem,2vw,0.9rem); letter-spacing: 0.3em;
+    color: var(--neon-cyan); border: 1px solid var(--neon-cyan);
+    padding: 6px 20px; border-radius: 100px; margin-bottom: 24px;
+    filter: drop-shadow(0 0 8px var(--neon-cyan));
+    animation: borderPulse 3s ease-in-out infinite;
+  }
+  @keyframes borderPulse {
+    0%,100% { box-shadow:0 0 6px var(--neon-cyan), inset 0 0 6px rgba(0,245,255,0.05); }
+    50%     { box-shadow:0 0 18px var(--neon-cyan), inset 0 0 12px rgba(0,245,255,0.1); }
+  }
+  .brand-label {
+    font-family: 'Orbitron', monospace;
+    font-size: clamp(0.65rem,1.8vw,0.8rem); letter-spacing: 0.5em;
+    color: var(--text-dim); text-transform: uppercase; margin-bottom: 8px;
+  }
+  .hero-title {
+    font-family: 'Orbitron', monospace;
+    font-size: clamp(3rem,12vw,8rem); font-weight: 900; line-height: 0.9;
+    background: linear-gradient(135deg, var(--neon-cyan) 0%, var(--neon-purple) 50%, var(--neon-pink) 100%);
+    background-size: 300% 300%;
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    animation: gradShift 4s ease infinite;
+    filter: drop-shadow(0 0 30px rgba(0,245,255,0.4));
+    margin-bottom: 8px;
+  }
+  @keyframes gradShift {
+    0%,100% { background-position:0% 50%; } 50% { background-position:100% 50%; }
+  }
+  .hero-sub {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: clamp(1rem,3vw,1.4rem); font-weight: 300;
+    letter-spacing: 0.4em; color: rgba(255,255,255,0.6);
+    text-transform: uppercase; margin-bottom: 16px;
+  }
+  .hero-tagline {
+    font-family: 'Orbitron', monospace;
+    font-size: clamp(0.7rem,2vw,0.9rem); letter-spacing: 0.25em;
+    color: var(--neon-purple); filter: drop-shadow(0 0 8px var(--neon-purple));
+    animation: taglinePulse 2.5s ease-in-out infinite;
+  }
+  @keyframes taglinePulse {
+    0%,100% { opacity:0.7; }
+    50% { opacity:1; filter:drop-shadow(0 0 16px var(--neon-purple)); }
+  }
+  .divider {
+    width:100%; height:1px; max-width:600px; margin:40px auto 0;
+    background:linear-gradient(90deg, transparent, var(--neon-cyan), var(--neon-purple), transparent);
+    opacity:0.4;
+  }
 
-        .loading-text {
-            font-size: 36px;
-            font-weight: 700;
-            letter-spacing: 3px;
-            background: linear-gradient(45deg, #00f5ff, #ff00ff, #00ff88, #ffaa00);
-            background-size: 300% 300%;
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            animation: gradient-shift 3s ease infinite, float-text 2s ease-in-out infinite;
-            text-shadow: 0 0 30px rgba(0, 245, 255, 0.5);
-        }
+  /* ── STATS BAR ── */
+  .stats-bar {
+    display:flex; justify-content:center;
+    gap:clamp(20px,6vw,60px); flex-wrap:wrap; padding:30px 20px;
+  }
+  .stat-item { text-align:center; }
+  .stat-value {
+    font-family:'Orbitron',monospace;
+    font-size:clamp(1.2rem,3vw,1.8rem); font-weight:700;
+    color:var(--neon-cyan); filter:drop-shadow(0 0 8px var(--neon-cyan));
+  }
+  .stat-label {
+    font-size:0.75rem; letter-spacing:0.2em;
+    color:var(--text-dim); text-transform:uppercase; margin-top:2px;
+  }
 
-        @keyframes gradient-shift {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
-        }
+  /* ── GRID ── */
+  .grid-section {
+    padding:0 clamp(16px,4vw,60px) clamp(60px,10vw,120px);
+    max-width:1400px; margin:0 auto;
+  }
+  .section-label {
+    font-family:'Orbitron',monospace;
+    font-size:0.7rem; letter-spacing:0.5em;
+    color:var(--text-dim); text-align:center;
+    margin-bottom:32px; text-transform:uppercase;
+  }
+  .flavour-grid {
+    display:grid;
+    grid-template-columns:repeat(auto-fill, minmax(min(100%,260px),1fr));
+    gap:20px;
+  }
 
-        @keyframes float-text {
-            0%, 100% { transform: translateY(0px); }
-            50% { transform: translateY(-10px); }
-        }
+  /* ── CARD ── */
+  @keyframes cardIn {
+    from { opacity:0; transform:translateY(24px) scale(0.95); }
+    to   { opacity:1; transform:translateY(0)    scale(1); }
+  }
 
-        /* Main Page */
-        #main-page {
-            opacity: 0;
-            transform: scale(0.9);
-            transition: all 1s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-            position: relative;
-            min-height: 100vh;
-            padding: 60px 20px;
-        }
+  .card {
+    position:relative;
+    background:var(--bg-card);
+    border:1px solid var(--glass-border);
+    border-radius:18px; padding:22px 20px;
+    backdrop-filter:blur(20px);
+    transition:transform 0.35s cubic-bezier(.25,.8,.25,1),
+               box-shadow 0.35s ease, border-color 0.35s ease;
+    overflow:hidden; cursor:default;
+    opacity:0;
+    animation:cardIn 0.55s ease forwards;
+  }
+  .card::before {
+    content:''; position:absolute; inset:0;
+    background:linear-gradient(135deg, rgba(0,245,255,0.06) 0%, rgba(191,0,255,0.04) 100%);
+    opacity:0; transition:opacity 0.35s; border-radius:inherit;
+  }
+  .card::after {
+    content:''; position:absolute;
+    top:-40%; left:-40%; width:180%; height:180%;
+    background:radial-gradient(circle, rgba(0,245,255,0.06) 0%, transparent 60%);
+    opacity:0; transform:scale(0.5);
+    transition:opacity 0.4s, transform 0.4s;
+  }
+  .card:hover {
+    transform:translateY(-6px) scale(1.02);
+    border-color:rgba(0,245,255,0.5);
+    box-shadow:0 12px 40px rgba(0,0,0,0.5), 0 0 30px rgba(0,245,255,0.15);
+  }
+  .card:hover::before { opacity:1; }
+  .card:hover::after  { opacity:1; transform:scale(1); }
 
-        #main-page.show {
-            opacity: 1;
-            transform: scale(1);
-        }
+  /* Low stock — red tint */
+  .card.low-stock {
+    border-color:rgba(255,32,64,0.28);
+    box-shadow:0 0 14px rgba(255,32,64,0.1);
+  }
+  .card.low-stock::before {
+    background:linear-gradient(135deg, rgba(255,32,64,0.07) 0%, rgba(191,0,255,0.03) 100%);
+  }
+  .card.low-stock:hover {
+    border-color:rgba(255,32,64,0.65);
+    box-shadow:0 12px 40px rgba(0,0,0,0.5), 0 0 28px rgba(255,32,64,0.22);
+  }
 
-        /* Animated Background */
-        .bg-animation {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: -1;
-            overflow: hidden;
-        }
+  /* Out of stock — greyed */
+  .card.out-of-stock {
+    border-color:rgba(255,255,255,0.05);
+  }
+  .card.out-of-stock.anim-done {
+    opacity:0.35 !important;
+  }
+  .card.out-of-stock:hover {
+    transform:translateY(-2px);
+    box-shadow:none;
+    border-color:rgba(255,255,255,0.09);
+  }
+  .card.out-of-stock .card-name { color:rgba(255,255,255,0.3); }
 
-        .vapor-particle {
-            position: absolute;
-            width: 200px;
-            height: 200px;
-            background: radial-gradient(circle, rgba(0, 245, 255, 0.1), transparent 70%);
-            border-radius: 50%;
-            filter: blur(40px);
-            animation: float-particle 20s infinite;
-            opacity: 0.6;
-        }
+  .card-number {
+    font-family:'Orbitron',monospace;
+    font-size:0.65rem; letter-spacing:0.2em;
+    color:var(--text-dim); margin-bottom:10px;
+    position:relative; z-index:1;
+  }
+  .card-name {
+    font-family:'Orbitron',monospace;
+    font-size:clamp(0.85rem,2vw,1rem); font-weight:700;
+    letter-spacing:0.05em; color:#fff; margin-bottom:16px;
+    line-height:1.3; position:relative; z-index:1; transition:color 0.3s;
+  }
+  .card-footer {
+    display:flex; align-items:center; justify-content:space-between;
+    position:relative; z-index:1;
+  }
 
-        .vapor-particle:nth-child(1) {
-            top: 10%;
-            left: 10%;
-            animation-duration: 15s;
-            background: radial-gradient(circle, rgba(255, 0, 255, 0.1), transparent 70%);
-        }
+  /* stock dot */
+  .stock-dot { width:7px; height:7px; border-radius:50%; flex-shrink:0; }
+  .dot-ok    { background:#00ff99; box-shadow:0 0 6px #00ff99; }
+  .dot-low   { background:var(--neon-red); box-shadow:0 0 6px var(--neon-red); animation:dotBlink 1.4s ease-in-out infinite; }
+  .dot-out   { background:rgba(255,255,255,0.12); }
+  @keyframes dotBlink {
+    0%,100% { opacity:1; } 50% { opacity:0.25; }
+  }
 
-        .vapor-particle:nth-child(2) {
-            top: 50%;
-            right: 10%;
-            animation-duration: 18s;
-            animation-delay: 2s;
-            background: radial-gradient(circle, rgba(0, 255, 136, 0.1), transparent 70%);
-        }
+  /* badges */
+  .qty-badge {
+    font-family:'Orbitron',monospace;
+    font-size:0.7rem; font-weight:700; letter-spacing:0.15em;
+    padding:5px 14px; border-radius:100px;
+    background:rgba(0,245,255,0.1); color:var(--neon-cyan);
+    border:1px solid rgba(0,245,255,0.3);
+    filter:drop-shadow(0 0 6px rgba(0,245,255,0.3));
+    transition:filter 0.3s; white-space:nowrap;
+  }
+  .card:hover .qty-badge { filter:drop-shadow(0 0 10px var(--neon-cyan)); }
 
-        .vapor-particle:nth-child(3) {
-            bottom: 10%;
-            left: 30%;
-            animation-duration: 22s;
-            animation-delay: 4s;
-            background: radial-gradient(circle, rgba(255, 170, 0, 0.1), transparent 70%);
-        }
+  .qty-badge.low {
+    background:rgba(255,32,64,0.1); color:var(--neon-red);
+    border-color:rgba(255,32,64,0.35);
+    filter:drop-shadow(0 0 6px rgba(255,32,64,0.28));
+  }
+  .card:hover .qty-badge.low { filter:drop-shadow(0 0 12px var(--neon-red)); }
 
-        .vapor-particle:nth-child(4) {
-            top: 30%;
-            left: 50%;
-            animation-duration: 17s;
-            animation-delay: 1s;
-        }
+  .out-badge {
+    font-family:'Orbitron',monospace;
+    font-size:0.65rem; font-weight:700; letter-spacing:0.2em;
+    padding:5px 14px; border-radius:100px;
+    background:rgba(255,255,255,0.04); color:rgba(255,255,255,0.22);
+    border:1px solid rgba(255,255,255,0.07);
+  }
 
-        @keyframes float-particle {
-            0%, 100% {
-                transform: translate(0, 0) rotate(0deg);
-            }
-            33% {
-                transform: translate(50px, -100px) rotate(120deg);
-            }
-            66% {
-                transform: translate(-50px, 50px) rotate(240deg);
-            }
-        }
+  .card-accent {
+    position:absolute; bottom:0; left:0; right:0; height:2px;
+    background:linear-gradient(90deg, transparent, var(--neon-cyan), transparent);
+    opacity:0; transition:opacity 0.35s;
+  }
+  .card.low-stock .card-accent {
+    background:linear-gradient(90deg, transparent, var(--neon-red), transparent);
+  }
+  .card:hover .card-accent { opacity:1; }
 
-        /* Header */
-        .header {
-            text-align: center;
-            margin-bottom: 80px;
-            position: relative;
-        }
+  /* ── FOOTER ── */
+  footer {
+    text-align:center; padding:30px 20px;
+    font-size:0.7rem; letter-spacing:0.2em;
+    color:rgba(255,255,255,0.15); text-transform:uppercase;
+    border-top:1px solid rgba(255,255,255,0.04);
+    position:relative; z-index:2;
+  }
 
-        .header h1 {
-            font-size: 64px;
-            font-weight: 900;
-            margin-bottom: 20px;
-            background: linear-gradient(135deg, #00f5ff 0%, #ff00ff 50%, #00ff88 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            animation: title-glow 3s ease-in-out infinite;
-            text-shadow: 0 0 50px rgba(0, 245, 255, 0.5);
-            letter-spacing: 2px;
-        }
+  /* ── SCROLLBAR ── */
+  ::-webkit-scrollbar { width:4px; }
+  ::-webkit-scrollbar-track { background:transparent; }
+  ::-webkit-scrollbar-thumb { background:var(--neon-purple); border-radius:2px; }
 
-        @keyframes title-glow {
-            0%, 100% {
-                filter: drop-shadow(0 0 20px rgba(0, 245, 255, 0.8)) 
-                        drop-shadow(0 0 40px rgba(255, 0, 255, 0.6));
-            }
-            50% {
-                filter: drop-shadow(0 0 40px rgba(0, 245, 255, 1)) 
-                        drop-shadow(0 0 60px rgba(255, 0, 255, 0.8));
-            }
-        }
-
-        .header p {
-            font-size: 24px;
-            color: #aaa;
-            letter-spacing: 4px;
-            font-weight: 300;
-        }
-
-        /* Container */
-        .container {
-            max-width: 900px;
-            margin: 0 auto;
-        }
-
-        /* Product Card */
-        .product-card {
-            background: linear-gradient(135deg, rgba(26, 26, 46, 0.8) 0%, rgba(15, 15, 25, 0.9) 100%);
-            backdrop-filter: blur(20px);
-            border-radius: 30px;
-            padding: 50px;
-            box-shadow: 
-                0 20px 60px rgba(0, 245, 255, 0.2),
-                0 0 100px rgba(255, 0, 255, 0.1),
-                inset 0 0 80px rgba(0, 245, 255, 0.05);
-            border: 2px solid rgba(0, 245, 255, 0.3);
-            position: relative;
-            overflow: hidden;
-            transition: all 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-        }
-
-        .product-card:hover {
-            transform: translateY(-10px) scale(1.02);
-            box-shadow: 
-                0 30px 80px rgba(0, 245, 255, 0.3),
-                0 0 120px rgba(255, 0, 255, 0.2),
-                inset 0 0 100px rgba(0, 245, 255, 0.08);
-        }
-
-        .product-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 40px;
-            padding-bottom: 30px;
-            border-bottom: 2px solid rgba(0, 245, 255, 0.2);
-        }
-
-        .product-name {
-            font-size: 42px;
-            font-weight: 800;
-            background: linear-gradient(135deg, #00f5ff, #ff00ff);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            letter-spacing: 1px;
-        }
-
-        .product-price {
-            font-size: 48px;
-            font-weight: 900;
-            color: #00ff88;
-            text-shadow: 0 0 20px rgba(0, 255, 136, 0.6);
-            animation: price-pulse 2s ease-in-out infinite;
-        }
-
-        @keyframes price-pulse {
-            0%, 100% {
-                transform: scale(1);
-                text-shadow: 0 0 20px rgba(0, 255, 136, 0.6);
-            }
-            50% {
-                transform: scale(1.05);
-                text-shadow: 0 0 30px rgba(0, 255, 136, 0.8), 0 0 50px rgba(0, 255, 136, 0.4);
-            }
-        }
-
-        /* Flavours Grid */
-        .flavours-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 20px;
-        }
-
-        .flavour-item {
-            background: linear-gradient(135deg, rgba(0, 245, 255, 0.1), rgba(255, 0, 255, 0.05));
-            backdrop-filter: blur(10px);
-            padding: 20px;
-            border-radius: 15px;
-            display: flex;
-            align-items: center;
-            gap: 20px;
-            border: 1px solid rgba(0, 245, 255, 0.2);
-            transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-            cursor: pointer;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .flavour-item::before {
-            content: '';
-            position: absolute;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: linear-gradient(45deg, transparent, rgba(0, 245, 255, 0.1), transparent);
-            transform: rotate(45deg);
-            transition: all 0.6s;
-        }
-
-        .flavour-item:hover::before {
-            left: 100%;
-        }
-
-        .flavour-item:hover {
-            transform: translateX(10px);
-            background: linear-gradient(135deg, rgba(0, 245, 255, 0.15), rgba(255, 0, 255, 0.1));
-            box-shadow: 
-                0 10px 30px rgba(0, 245, 255, 0.3),
-                inset 0 0 20px rgba(0, 245, 255, 0.1);
-            border-color: rgba(0, 245, 255, 0.5);
-        }
-
-        .flavour-number {
-            font-size: 28px;
-            font-weight: 900;
-            background: linear-gradient(135deg, #00f5ff, #ff00ff);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            min-width: 40px;
-            text-align: center;
-            text-shadow: 0 0 20px rgba(0, 245, 255, 0.5);
-            animation: number-spin 3s ease-in-out infinite;
-        }
-
-        @keyframes number-spin {
-            0%, 100% { transform: rotateY(0deg); }
-            50% { transform: rotateY(180deg); }
-        }
-
-        .flavour-name {
-            font-size: 16px;
-            color: #fff;
-            line-height: 1.6;
-            font-weight: 500;
-        }
-
-        /* Decorative Elements */
-        .vapor-cloud {
-            position: absolute;
-            width: 400px;
-            height: 400px;
-            background: radial-gradient(circle, rgba(0, 245, 255, 0.15), transparent 60%);
-            border-radius: 50%;
-            filter: blur(80px);
-            pointer-events: none;
-        }
-
-        .vapor-cloud-1 {
-            top: -200px;
-            right: -200px;
-            animation: float-cloud 15s ease-in-out infinite;
-        }
-
-        .vapor-cloud-2 {
-            bottom: -200px;
-            left: -200px;
-            background: radial-gradient(circle, rgba(255, 0, 255, 0.15), transparent 60%);
-            animation: float-cloud 12s ease-in-out infinite reverse;
-        }
-
-        @keyframes float-cloud {
-            0%, 100% {
-                transform: translate(0, 0) scale(1);
-            }
-            50% {
-                transform: translate(50px, -50px) scale(1.2);
-            }
-        }
-
-        /* Responsive */
-        @media (max-width: 768px) {
-            .header h1 {
-                font-size: 42px;
-            }
-
-            .product-name {
-                font-size: 32px;
-            }
-
-            .product-price {
-                font-size: 36px;
-            }
-
-            .product-card {
-                padding: 30px;
-            }
-
-            .flavours-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .loading-text {
-                font-size: 24px;
-            }
-        }
-
-        /* Sparkle Effect */
-        @keyframes sparkle {
-            0%, 100% {
-                opacity: 0;
-                transform: scale(0);
-            }
-            50% {
-                opacity: 1;
-                transform: scale(1);
-            }
-        }
-
-        .sparkle {
-            position: absolute;
-            width: 4px;
-            height: 4px;
-            background: white;
-            border-radius: 50%;
-            box-shadow: 0 0 10px #fff, 0 0 20px #00f5ff;
-            animation: sparkle 2s infinite;
-        }
-    </style>
+  /* ── RESPONSIVE ── */
+  @media (max-width:480px) {
+    .flavour-grid { grid-template-columns:1fr 1fr; gap:12px; }
+    .card { padding:16px 14px; }
+    .card-name { font-size:0.75rem; }
+  }
+</style>
 </head>
 <body>
-    <!-- Loading Screen -->
-    <div id="loading-screen">
-        <div class="loading-animation">
-            <div class="vapor-glow"></div>
-            <div class="vapor-circle"></div>
-            <div class="vapor-circle"></div>
-            <div class="vapor-circle"></div>
-        </div>
-        <div class="loading-text">Kraunami skoniai</div>
+
+<!-- LOADING SCREEN -->
+<div id="loader">
+  <div class="loader-ring"></div>
+  <div class="loader-text">Kraunami skoniai</div>
+  <div class="loader-dots">
+    <span></span><span></span><span></span>
+  </div>
+</div>
+
+<!-- BACKGROUND -->
+<canvas id="bgCanvas"></canvas>
+
+<!-- MAIN -->
+<div id="main">
+  <header>
+    <div class="price-tag">Kaina: 3.5€</div>
+    <div class="brand-label">Premium Liquid</div>
+    <h1 class="hero-title">NS40</h1>
+    <p class="hero-sub">Skonių sąrašas</p>
+    <p class="hero-tagline">◈ &nbsp;Pasirink savo skonį&nbsp; ◈</p>
+    <div class="divider"></div>
+  </header>
+
+  <div class="stats-bar" id="statsBar"></div>
+
+  <div class="grid-section">
+    <p class="section-label">◈ Visi skoniai ◈</p>
+    <div class="flavour-grid" id="flavourGrid"></div>
+  </div>
+
+  <footer>NS40 Premium Liquids &nbsp;·&nbsp; Gaminta su meile &nbsp;·&nbsp; 2025</footer>
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════
+   ✏️  REDAGUOK TIK ŠĮ BLOKĄ
+       Formatas: skonio pavadinimas [kiekis]vnt
+       0   → pilka + "Išparduota"   (rodoma pačiame gale)
+       1–2 → raudona paryškinimas   (mažas likutis)
+       3+  → normalus
+═══════════════════════════════════════════════════════════════ */
+const flavourInput = `
+Pitaja su jackfrutu 4vnt
+Nebera 0vnt
+Persikas su ličiais 1vnt
+Raudonų uogų miksas su šaltuku 3vnt
+Nebera 0vnt
+Ananasas su citrina laimu ir šaltuku 3vnt
+Braškė su aviete 2vnt
+Braškė su kiviu 2vnt
+Kramtomoji guma 4vnt
+Nebera 0vnt
+Nebera 0vnt
+Šaldantis juodųjų serbentų ir aviečių derinys 2vnt
+Miško uogų miksas 2vnt
+Tamsios uogos vyšnios serbentai 4vnt
+Nebera 0vnt
+Nebera 0vnt
+`;
+/* ═══════════════════════════════════════════════════════════════
+   ✏️  REDAGAVIMO ZONA BAIGIASI ČIA
+═══════════════════════════════════════════════════════════════ */
+
+// ── Parse ──
+function parseFlavours(raw) {
+  return raw.trim().split('\n')
+    .map(l => l.trim()).filter(Boolean)
+    .map((line, i) => {
+      const m = line.match(/^(.*?)\s+(\d+)vnt\s*$/i);
+      if (!m) return null;
+      // Preserve original casing, just capitalise first letter of whole string
+      const raw = m[1].trim();
+      const name = raw.charAt(0).toUpperCase() + raw.slice(1);
+      return { index: i + 1, name, qty: parseInt(m[2], 10) };
+    }).filter(Boolean);
+}
+
+// ── Sort: in-stock first, sold-out last ──
+function sortFlavours(list) {
+  return [...list].sort((a, b) => {
+    if (a.qty === 0 && b.qty > 0) return 1;
+    if (a.qty > 0 && b.qty === 0) return -1;
+    return 0;
+  });
+}
+
+const flavours = sortFlavours(parseFlavours(flavourInput));
+
+// ── Helpers ──
+function stockClass(qty) {
+  if (qty === 0) return 'out-of-stock';
+  if (qty <= 2)  return 'low-stock';
+  return '';
+}
+function dotClass(qty) {
+  if (qty === 0) return 'dot-out';
+  if (qty <= 2)  return 'dot-low';
+  return 'dot-ok';
+}
+function badgeClass(qty) {
+  return (qty > 0 && qty <= 2) ? 'low' : '';
+}
+
+// ── Stats bar ──
+function renderStats() {
+  const total     = flavours.length;
+  const available = flavours.filter(f => f.qty > 0).length;
+  const sold      = total - available;
+  document.getElementById('statsBar').innerHTML = `
+    <div class="stat-item">
+      <div class="stat-value">${total}</div>
+      <div class="stat-label">Viso skonių</div>
     </div>
-
-    <!-- Main Page -->
-    <div id="main-page">
-        <!-- Animated Background -->
-        <div class="bg-animation">
-            <div class="vapor-particle"></div>
-            <div class="vapor-particle"></div>
-            <div class="vapor-particle"></div>
-            <div class="vapor-particle"></div>
-        </div>
-
-        <!-- Header -->
-        <div class="header">
-            <h1>Vkusna i tochka</h1>
-            <p>Premium Skysčiai</p>
-        </div>
-
-        <!-- Product Card -->
-        <div class="container">
-            <div class="product-card">
-                <div class="vapor-cloud vapor-cloud-1"></div>
-                <div class="vapor-cloud vapor-cloud-2"></div>
-                
-                <div class="product-header">
-                    <div class="product-name">NS40 - 10ML</div>
-                    <div class="product-price">3.50€</div>
-                </div>
-
-                <div class="flavours-grid" id="flavours-container">
-                    <!-- Skoniai bus automatiškai sugeneruoti iš JavaScript masyvo -->
-                </div>
-            </div>
-        </div>
+    <div class="stat-item">
+      <div class="stat-value">${available}</div>
+      <div class="stat-label">Turimų</div>
     </div>
+    <div class="stat-item">
+      <div class="stat-value">${sold}</div>
+      <div class="stat-label">Išparduota</div>
+    </div>
+  `;
+}
 
-    <script>
-        // ========================================
-        // SKONIŲ SĄRAŠAS - REDAGUOK ČIA!
-        // Tiesiog pridėk arba pašalink skonius šiame masyve
-        // Numeriai automatiškai perskaičiuojami
-        // ========================================
-        const flavours = [
-            "Pitaja su jackfrutu 4",
-            "Nebera..",
-            "Persikas su ličiais 1",
-            "Raudonų uogų miksas su šaltuku 3",
-            "Nebera...",
-            "Ananasas su citrina/laimu ir šaltuku 3",
-            "Braškė su aviete 2",
-            "Braškė su kiviu 2",
-            "Kramtomoji guma 4",
-            "Nebera...",
-            "Nebera...",
-            "Šaldantis juodųjų serbentų ir aviečių derinys 2",
-            "Miško uogų miksas 2",
-            "Tamsios uogos (vyšnios, serbentai) 4",
-            "Nebera...",
-            "Nebera..."
-        ];
+// ── Render grid ──
+function renderGrid(list) {
+  const grid = document.getElementById('flavourGrid');
+  grid.innerHTML = list.map((f, i) => `
+    <div class="card ${stockClass(f.qty)}"
+         style="animation-delay:${i * 0.045}s">
+      <div class="card-number">#${String(f.index).padStart(2,'0')}</div>
+      <div class="card-name">${f.name}</div>
+      <div class="card-footer">
+        <span class="stock-dot ${dotClass(f.qty)}"></span>
+        ${f.qty > 0
+          ? `<span class="qty-badge ${badgeClass(f.qty)}">${f.qty}&nbsp;vnt</span>`
+          : `<span class="out-badge">Išparduota</span>`}
+      </div>
+      <div class="card-accent"></div>
+    </div>
+  `).join('');
 
-        // Automatiškai sugeneruoja skonius su numeriais
-        function generateFlavours() {
-            const container = document.getElementById('flavours-container');
-            container.innerHTML = '';
-            
-            flavours.forEach((flavour, index) => {
-                const flavourItem = document.createElement('div');
-                flavourItem.className = 'flavour-item';
-                flavourItem.innerHTML = `
-                    <span class="flavour-number">${index + 1}</span>
-                    <span class="flavour-name">${flavour}</span>
-                `;
-                container.appendChild(flavourItem);
-                
-                // Add hover effects
-                flavourItem.addEventListener('mouseenter', function() {
-                    this.style.transform = 'translateX(10px) scale(1.05) rotateZ(' + (Math.random() * 4 - 2) + 'deg)';
-                });
-                flavourItem.addEventListener('mouseleave', function() {
-                    this.style.transform = '';
-                });
-            });
-        }
+  // Once out-of-stock cards finish fading in, lock them to low opacity
+  grid.querySelectorAll('.card.out-of-stock').forEach(card => {
+    card.addEventListener('animationend', () => {
+      card.classList.add('anim-done');
+    }, { once: true });
+  });
+}
 
-        // Loading screen animation
-        window.addEventListener('load', () => {
-            generateFlavours(); // Generuoja skonius
-            
-            setTimeout(() => {
-                document.getElementById('loading-screen').classList.add('fade-out');
-                setTimeout(() => {
-                    document.getElementById('main-page').classList.add('show');
-                    createSparkles();
-                }, 500);
-            }, 3000);
-        });
+renderStats();
+renderGrid(flavours);
 
-        // Create random sparkle effects
-        function createSparkles() {
-            setInterval(() => {
-                const sparkle = document.createElement('div');
-                sparkle.className = 'sparkle';
-                sparkle.style.left = Math.random() * 100 + '%';
-                sparkle.style.top = Math.random() * 100 + '%';
-                sparkle.style.animationDelay = Math.random() * 2 + 's';
-                document.querySelector('.bg-animation').appendChild(sparkle);
+// ── Loader ──
+window.addEventListener('load', () => {
+  setTimeout(() => document.getElementById('loader').classList.add('hide'), 2600);
+});
 
-                setTimeout(() => sparkle.remove(), 2000);
-            }, 500);
-        }
-    </script>
+// ── Canvas: particles + smoke ──
+const canvas = document.getElementById('bgCanvas');
+const ctx    = canvas.getContext('2d');
+
+function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+resize();
+window.addEventListener('resize', resize);
+
+const COLORS    = ['#00f5ff','#bf00ff','#ff0080','#0057ff'];
+const particles = Array.from({length: 70}, () => ({
+  x:     Math.random() * window.innerWidth,
+  y:     Math.random() * window.innerHeight,
+  r:     Math.random() * 1.5 + 0.3,
+  vx:    (Math.random() - 0.5) * 0.3,
+  vy:    (Math.random() - 0.5) * 0.3 - 0.15,
+  color: COLORS[Math.floor(Math.random() * COLORS.length)],
+  alpha: Math.random() * 0.6 + 0.2,
+  pulse: Math.random() * Math.PI * 2,
+}));
+
+const smokes = Array.from({length: 8}, () => ({
+  x:     Math.random() * window.innerWidth,
+  y:     Math.random() * window.innerHeight,
+  r:     Math.random() * 200 + 100,
+  vx:    (Math.random() - 0.5) * 0.12,
+  vy:    -(Math.random() * 0.15 + 0.05),
+  alpha: Math.random() * 0.03 + 0.01,
+  phase: Math.random() * Math.PI * 2,
+}));
+
+function draw() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  const g1 = ctx.createRadialGradient(canvas.width*0.2, canvas.height*0.3, 0, canvas.width*0.2, canvas.height*0.3, canvas.width*0.55);
+  g1.addColorStop(0,'rgba(0,87,255,0.04)'); g1.addColorStop(1,'transparent');
+  ctx.fillStyle = g1; ctx.fillRect(0,0,canvas.width,canvas.height);
+
+  const g2 = ctx.createRadialGradient(canvas.width*0.8, canvas.height*0.7, 0, canvas.width*0.8, canvas.height*0.7, canvas.width*0.5);
+  g2.addColorStop(0,'rgba(191,0,255,0.04)'); g2.addColorStop(1,'transparent');
+  ctx.fillStyle = g2; ctx.fillRect(0,0,canvas.width,canvas.height);
+
+  smokes.forEach(s => {
+    s.x += s.vx; s.y += s.vy; s.phase += 0.003;
+    if (s.y + s.r < 0) { s.y = canvas.height + s.r; s.x = Math.random()*canvas.width; }
+    const sg = ctx.createRadialGradient(s.x,s.y,0,s.x,s.y,s.r);
+    sg.addColorStop(0,`rgba(0,245,255,${s.alpha*(0.8+0.2*Math.sin(s.phase))})`);
+    sg.addColorStop(1,'transparent');
+    ctx.fillStyle = sg; ctx.beginPath(); ctx.arc(s.x,s.y,s.r,0,Math.PI*2); ctx.fill();
+  });
+
+  particles.forEach(p => {
+    p.x += p.vx; p.y += p.vy; p.pulse += 0.04;
+    if (p.y < -10)             { p.y = canvas.height+10; p.x = Math.random()*canvas.width; }
+    if (p.x < -10)               p.x = canvas.width+10;
+    if (p.x > canvas.width+10)   p.x = -10;
+    const a = p.alpha * (0.6 + 0.4*Math.sin(p.pulse));
+    ctx.save();
+    ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
+    ctx.shadowBlur = 12; ctx.shadowColor = p.color;
+    ctx.globalAlpha = a; ctx.fillStyle = p.color;
+    ctx.fill(); ctx.restore();
+  });
+
+  requestAnimationFrame(draw);
+}
+draw();
+</script>
 </body>
 </html>

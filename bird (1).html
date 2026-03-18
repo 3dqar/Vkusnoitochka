@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="lt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NS40 — Flappy Liquid</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --neon-cyan:   #00f5ff;
+    --neon-purple: #bf00ff;
+    --neon-pink:   #ff0080;
+    --bg-deep:     #020408;
+    --text-dim:    rgba(255,255,255,0.5);
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Rajdhani', sans-serif;
+    background: var(--bg-deep);
+    color: #fff;
+    min-height: 100vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+  #bgCanvas { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
+  body::before {
+    content:''; position:fixed; inset:0; z-index:1;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+    pointer-events:none; opacity:0.4;
+  }
+  #wrap {
+    position: relative; z-index: 2;
+    display: flex; flex-direction: column;
+    align-items: center; gap: 14px;
+    padding: 20px; width: 100%;
+  }
+  .back-btn {
+    align-self: flex-start;
+    display: inline-flex; align-items: center; gap: 8px;
+    font-family: 'Orbitron', monospace;
+    font-size: 0.7rem; letter-spacing: 0.25em;
+    color: var(--text-dim);
+    border: 1px solid rgba(255,255,255,0.1);
+    background: transparent;
+    padding: 8px 20px; border-radius: 100px;
+    cursor: pointer; text-decoration: none;
+    transition: all 0.3s;
+  }
+  .back-btn:hover { color: var(--neon-cyan); border-color: rgba(0,245,255,0.4); }
+  .game-title {
+    font-family: 'Orbitron', monospace;
+    font-size: clamp(1.4rem, 5vw, 2.2rem); font-weight: 900;
+    background: linear-gradient(135deg, var(--neon-cyan), var(--neon-purple), var(--neon-pink));
+    background-size: 300% 300%;
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    animation: gradShift 4s ease infinite; letter-spacing: 0.1em;
+  }
+  @keyframes gradShift { 0%,100%{background-position:0% 50%} 50%{background-position:100% 50%} }
+  #scoreDisplay {
+    font-family: 'Orbitron', monospace;
+    font-size: clamp(0.75rem, 2vw, 0.95rem);
+    color: var(--neon-cyan); letter-spacing: 0.25em;
+  }
+  #gameCanvas {
+    border: 1px solid rgba(0,245,255,0.35); border-radius: 16px; display: block;
+    box-shadow: 0 0 40px rgba(0,245,255,0.15);
+    width: min(360px, 90vw); cursor: pointer; touch-action: none;
+  }
+  #message {
+    font-family: 'Orbitron', monospace; font-size: clamp(0.65rem, 2vw, 0.8rem);
+    color: var(--neon-purple); letter-spacing: 0.2em; text-align: center; min-height: 18px;
+  }
+  #startBtn {
+    font-family: 'Orbitron', monospace; font-size: 0.75rem; letter-spacing: 0.25em;
+    color: var(--neon-cyan); border: 1px solid var(--neon-cyan);
+    background: transparent; padding: 10px 32px; border-radius: 100px;
+    cursor: pointer; transition: all 0.3s; box-shadow: 0 0 10px rgba(0,245,255,0.2);
+  }
+  #startBtn:hover { background: rgba(0,245,255,0.1); box-shadow: 0 0 20px rgba(0,245,255,0.45); }
+</style>
+</head>
+<body>
+<canvas id="bgCanvas"></canvas>
+<div id="wrap">
+  <a href="index.html" class="back-btn">← GRĮŽTI</a>
+  <div class="game-title">FLAPPY LIQUID</div>
+  <div id="scoreDisplay">SCORE: 0 &nbsp;|&nbsp; BEST: 0</div>
+  <canvas id="gameCanvas" width="360" height="520"></canvas>
+  <div id="message">SPAUSK TARPĄ ARBA PALIESKI</div>
+  <button id="startBtn">PRADĖTI</button>
+</div>
+<script>
+/* BG particles */
+const bgC=document.getElementById('bgCanvas'),bgX=bgC.getContext('2d');
+function resizeBg(){bgC.width=innerWidth;bgC.height=innerHeight;}
+resizeBg();addEventListener('resize',resizeBg);
+const CLR=['#00f5ff','#bf00ff','#ff0080','#0057ff'];
+const pts=Array.from({length:55},()=>({x:Math.random()*innerWidth,y:Math.random()*innerHeight,r:Math.random()*1.4+0.3,vx:(Math.random()-.5)*.3,vy:(Math.random()-.5)*.3-.12,c:CLR[Math.floor(Math.random()*4)],a:Math.random()*.5+.2,p:Math.random()*Math.PI*2}));
+(function bgLoop(){bgX.clearRect(0,0,bgC.width,bgC.height);pts.forEach(p=>{p.x+=p.vx;p.y+=p.vy;p.p+=.04;if(p.y<-10){p.y=bgC.height+10;p.x=Math.random()*bgC.width;}if(p.x<-10)p.x=bgC.width+10;if(p.x>bgC.width+10)p.x=-10;bgX.save();bgX.beginPath();bgX.arc(p.x,p.y,p.r,0,Math.PI*2);bgX.shadowBlur=10;bgX.shadowColor=p.c;bgX.globalAlpha=p.a*(.6+.4*Math.sin(p.p));bgX.fillStyle=p.c;bgX.fill();bgX.restore();});requestAnimationFrame(bgLoop);})();
+
+/* GAME */
+const canvas=document.getElementById('gameCanvas');
+const ctx=canvas.getContext('2d');
+const scoreEl=document.getElementById('scoreDisplay');
+const msgEl=document.getElementById('message');
+const btn=document.getElementById('startBtn');
+const W=360,H=520,GRAV=0.45,FLAPV=-8,PW=54,GAP=148,SPD=2.6;
+let bird,pipes=[],score=0,best=0,frame=0,state='idle';
+
+function newBird(){return{x:80,y:H/2,vy:0,r:16};}
+
+function onInput(){
+  if(state==='idle'||state==='dead'){startGame();}
+  else if(state==='playing'){bird.vy=FLAPV;}
+}
+
+function startGame(){
+  bird=newBird();pipes=[];score=0;frame=0;state='playing';
+  btn.style.display='none';msgEl.textContent='';
+  requestAnimationFrame(gameLoop);
+}
+
+function gameDie(){
+  state='dead';
+  msgEl.textContent='GAME OVER — SPAUSK TARPĄ';
+  btn.textContent='BANDYTI VĖL';
+  btn.style.display='inline-block';
+  render();
+}
+
+function gameLoop(){
+  if(state!=='playing')return;
+  frame++;
+  bird.vy+=GRAV;bird.y+=bird.vy;
+  if(frame%90===0)pipes.push({x:W,topH:80+Math.random()*(H-GAP-160),scored:false});
+  for(let p of pipes){
+    p.x-=SPD;
+    if(!p.scored&&p.x+PW<bird.x){p.scored=true;score++;if(score>best)best=score;scoreEl.textContent='SCORE: '+score+'  |  BEST: '+best;}
+    if(bird.x+bird.r-5>p.x&&bird.x-bird.r+5<p.x+PW&&(bird.y-bird.r+4<p.topH||bird.y+bird.r-4>p.topH+GAP)){gameDie();return;}
+  }
+  pipes=pipes.filter(p=>p.x+PW>-5);
+  if(bird.y-bird.r<0||bird.y+bird.r>H){gameDie();return;}
+  render();
+  requestAnimationFrame(gameLoop);
+}
+
+function render(){
+  /* bg */
+  ctx.fillStyle='#020408';ctx.fillRect(0,0,W,H);
+  ctx.save();
+  let g=ctx.createRadialGradient(W*.2,H*.3,0,W*.2,H*.3,W*.7);
+  g.addColorStop(0,'rgba(0,87,255,0.07)');g.addColorStop(1,'transparent');
+  ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+  g=ctx.createRadialGradient(W*.8,H*.7,0,W*.8,H*.7,W*.6);
+  g.addColorStop(0,'rgba(191,0,255,0.06)');g.addColorStop(1,'transparent');
+  ctx.fillStyle=g;ctx.fillRect(0,0,W,H);ctx.restore();
+  /* grid */
+  ctx.strokeStyle='rgba(0,245,255,0.04)';ctx.lineWidth=1;
+  for(let y=0;y<H;y+=40){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
+  for(let x=0;x<W;x+=40){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();}
+  /* pipes */
+  pipes.forEach(p=>{
+    const gr=ctx.createLinearGradient(p.x,0,p.x+PW,0);
+    gr.addColorStop(0,'#061a1a');gr.addColorStop(.45,'rgba(0,245,255,0.18)');gr.addColorStop(1,'#061a1a');
+    ctx.fillStyle=gr;ctx.beginPath();ctx.rect(p.x,0,PW,p.topH);ctx.fill();
+    ctx.strokeStyle='#00f5ff';ctx.lineWidth=1.5;ctx.shadowBlur=12;ctx.shadowColor='#00f5ff';ctx.stroke();ctx.shadowBlur=0;
+    ctx.fillStyle=gr;ctx.beginPath();ctx.rect(p.x,p.topH+GAP,PW,H-p.topH-GAP);ctx.fill();
+    ctx.strokeStyle='#00f5ff';ctx.shadowBlur=12;ctx.shadowColor='#00f5ff';ctx.stroke();ctx.shadowBlur=0;
+    ctx.strokeStyle='rgba(0,245,255,0.3)';ctx.lineWidth=1;ctx.setLineDash([4,6]);
+    ctx.beginPath();ctx.moveTo(p.x+PW/2,p.topH);ctx.lineTo(p.x+PW/2,p.topH+GAP);ctx.stroke();ctx.setLineDash([]);
+  });
+  /* bird */
+  if(bird){
+    ctx.save();ctx.translate(bird.x,bird.y);
+    ctx.rotate(Math.max(-.5,Math.min(.5,bird.vy*.05)));
+    ctx.shadowBlur=20;ctx.shadowColor='#bf00ff';
+    const bg=ctx.createRadialGradient(-4,-4,2,0,0,bird.r);
+    bg.addColorStop(0,'#d080ff');bg.addColorStop(1,'#5500aa');
+    ctx.beginPath();ctx.arc(0,0,bird.r,0,Math.PI*2);ctx.fillStyle=bg;ctx.fill();
+    ctx.shadowBlur=0;ctx.strokeStyle='#bf00ff';ctx.lineWidth=1.5;ctx.stroke();
+    ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(5,-4,5,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#1a0033';ctx.beginPath();ctx.arc(6,-4,3,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(7,-5,1,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#ff0080';ctx.beginPath();ctx.moveTo(14,0);ctx.lineTo(22,-3);ctx.lineTo(22,3);ctx.closePath();ctx.fill();
+    ctx.restore();
+  }
+  /* idle overlay */
+  if(state==='idle'){
+    ctx.textAlign='center';
+    ctx.font='bold 32px Orbitron,monospace';
+    ctx.fillStyle='#00f5ff';ctx.shadowBlur=24;ctx.shadowColor='#00f5ff';
+    ctx.fillText('NS40',W/2,H/2-18);ctx.shadowBlur=0;
+    ctx.font='400 14px Orbitron,monospace';ctx.fillStyle='#bf00ff';
+    ctx.fillText('FLAPPY LIQUID',W/2,H/2+12);
+    ctx.font='400 11px Orbitron,monospace';ctx.fillStyle='rgba(255,255,255,0.35)';
+    ctx.fillText('SPAUSK TARPĄ ARBA PALIESKI',W/2,H/2+42);
+  }
+}
+
+/* init */
+bird=newBird();
+render();
+
+/* controls */
+document.addEventListener('keydown',e=>{if(e.code==='Space'){e.preventDefault();onInput();}});
+canvas.addEventListener('pointerdown',e=>{e.preventDefault();onInput();});
+btn.addEventListener('click',onInput);
+</script>
+</body>
+</html>

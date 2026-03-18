@@ -6,6 +6,36 @@
 <title>NS40 — Premium Liquid Skoniai</title>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600&display=swap" rel="stylesheet">
 <style>
+  .game-btn-wrap {
+  text-align: center;
+  padding: 10px 20px 30px;
+}
+.game-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-family: 'Orbitron', monospace;
+  font-size: clamp(0.7rem, 2vw, 0.85rem);
+  letter-spacing: 0.25em;
+  color: var(--neon-pink);
+  border: 1px solid var(--neon-pink);
+  background: transparent;
+  padding: 10px 28px;
+  border-radius: 100px;
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.3s ease;
+  animation: gameBtnPulse 3s ease-in-out infinite;
+}
+.game-btn:hover {
+  background: rgba(255,0,128,0.1);
+  filter: drop-shadow(0 0 16px rgba(255,0,128,0.6));
+  transform: scale(1.04);
+}
+@keyframes gameBtnPulse {
+  0%,100% { box-shadow: 0 0 6px rgba(255,0,128,0.2); }
+  50%     { box-shadow: 0 0 18px rgba(255,0,128,0.4); }
+}
   :root {
     --neon-cyan:    #00f5ff;
     --neon-purple:  #bf00ff;
@@ -559,5 +589,10 @@ function draw() {
 }
 draw();
 </script>
+  <div class="game-btn-wrap">
+  <a href="bird.html" class="game-btn">
+    <span>🐦</span> ŽAISTI NS40 FLAPPY
+  </a>
+</div>
 </body>
 </html>

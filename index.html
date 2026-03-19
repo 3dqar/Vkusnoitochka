@@ -90,7 +90,29 @@
   #calcResult { font-family:'Orbitron',monospace; font-size:1.4rem; font-weight:900; color:var(--neon-cyan); filter:drop-shadow(0 0 10px var(--neon-cyan)); letter-spacing:0.1em; }
   .calc-note { font-size:0.72rem; letter-spacing:0.15em; color:var(--text-dim); }
 
-  /* GRID */
+  /* ROULETTE MODAL */
+  #rouletteModal { display:none; position:fixed; inset:0; z-index:8888; background:rgba(2,4,8,0.95); backdrop-filter:blur(12px); align-items:center; justify-content:center; flex-direction:column; gap:24px; opacity:0; transition:opacity 0.3s ease; }
+  #rouletteModal.show { display:flex; }
+  #rouletteModal.visible { opacity:1; }
+  .modal-inner { width:min(680px,94vw); display:flex; flex-direction:column; align-items:center; gap:20px; }
+  .modal-title { font-family:'Orbitron',monospace; font-size:clamp(0.8rem,2vw,1rem); letter-spacing:0.4em; color:var(--neon-purple); filter:drop-shadow(0 0 10px var(--neon-purple)); }
+  #modalStripOuter { position:relative; overflow:hidden; height:120px; border-radius:12px; border:1px solid rgba(0,245,255,0.25); background:#010306; width:100%; }
+  #modalStripOuter::before,#modalStripOuter::after { content:''; position:absolute; top:0; bottom:0; width:100px; z-index:3; pointer-events:none; }
+  #modalStripOuter::before { left:0; background:linear-gradient(90deg,#010306,transparent); }
+  #modalStripOuter::after  { right:0; background:linear-gradient(-90deg,#010306,transparent); }
+  #modalMarker { position:absolute; left:50%; top:0; bottom:0; width:2px; background:#ff0080; box-shadow:0 0 14px #ff0080, 0 0 28px rgba(255,0,128,0.4); z-index:4; transform:translateX(-50%); }
+  #modalMarker::before { content:''; position:absolute; left:50%; top:0; transform:translateX(-50%); width:0; height:0; border-left:8px solid transparent; border-right:8px solid transparent; border-top:12px solid #ff0080; }
+  #modalMarker::after  { content:''; position:absolute; left:50%; bottom:0; transform:translateX(-50%); width:0; height:0; border-left:8px solid transparent; border-right:8px solid transparent; border-bottom:12px solid #ff0080; }
+  #modalStrip { display:flex; align-items:center; height:100%; gap:6px; padding:0 4px; will-change:transform; }
+  .modal-item { flex-shrink:0; width:130px; height:100px; border-radius:10px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:5px; border:1px solid rgba(0,245,255,0.18); background:rgba(0,245,255,0.03); padding:8px; }
+  .modal-item-bar { width:100%; height:3px; border-radius:2px; background:#00f5ff; box-shadow:0 0 8px #00f5ff; margin-bottom:4px; }
+  .modal-item-name { font-family:'Orbitron',monospace; font-size:10px; font-weight:700; text-align:center; color:#fff; line-height:1.3; overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; }
+  #modalWon { text-align:center; min-height:50px; display:flex; flex-direction:column; align-items:center; gap:6px; }
+  #modalWonName { font-family:'Orbitron',monospace; font-size:clamp(1.2rem,4vw,1.8rem); font-weight:900; color:var(--neon-cyan); filter:drop-shadow(0 0 16px var(--neon-cyan)); opacity:0; transform:scale(0.7); transition:all 0.5s cubic-bezier(.17,.67,.3,1.4); letter-spacing:0.08em; }
+  #modalWonName.show { opacity:1; transform:scale(1); }
+  .modal-close-btn { font-family:'Orbitron',monospace; font-size:0.7rem; letter-spacing:0.25em; color:#000; background:var(--neon-cyan); border:none; padding:11px 32px; border-radius:100px; cursor:none; font-weight:700; transition:all 0.2s; box-shadow:0 0 20px rgba(0,245,255,0.4); display:none; }
+  .modal-close-btn.show { display:block; }
+  .modal-close-btn:hover { box-shadow:0 0 32px rgba(0,245,255,0.7); transform:scale(1.04); }
   .grid-section { padding:0 clamp(16px,4vw,60px) clamp(60px,10vw,120px); max-width:1400px; margin:0 auto; }
   .section-label { font-family:'Orbitron',monospace; font-size:0.7rem; letter-spacing:0.5em; color:var(--text-dim); text-align:center; margin-bottom:32px; text-transform:uppercase; }
   .flavour-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(min(100%,260px),1fr)); gap:20px; }
@@ -163,18 +185,6 @@
       <div class="tool-label">◈ Skonių roulette ◈</div>
       <div id="rouletteResult">Spausk ir sužinok!</div>
       <button class="spin-btn" id="spinBtn">🎰 PASIRINK UŽ MANE</button>
-      <div id="caseOpening" style="display:none;width:100%;margin-top:8px;">
-        <div id="stripOuter" style="position:relative;overflow:hidden;height:100px;border-radius:10px;border:1px solid rgba(0,245,255,0.2);background:#010306;">
-          <div id="stripMarker" style="position:absolute;left:50%;top:0;bottom:0;width:2px;background:#ff0080;box-shadow:0 0 12px #ff0080;z-index:4;transform:translateX(-50%);"></div>
-          <div id="stripMarker" style="position:absolute;left:50%;top:0;width:0;height:0;border-left:7px solid transparent;border-right:7px solid transparent;border-top:10px solid #ff0080;z-index:5;transform:translateX(-50%);"></div>
-          <div id="caseStrip" style="display:flex;align-items:center;height:100%;gap:6px;padding:0 3px;will-change:transform;"></div>
-          <div style="position:absolute;top:0;bottom:0;left:0;width:70px;background:linear-gradient(90deg,#010306,transparent);z-index:3;pointer-events:none;"></div>
-          <div style="position:absolute;top:0;bottom:0;right:0;width:70px;background:linear-gradient(-90deg,#010306,transparent);z-index:3;pointer-events:none;"></div>
-        </div>
-        <div id="caseWonBox" style="text-align:center;min-height:36px;margin-top:10px;">
-          <div id="caseWonName" style="font-family:'Orbitron',monospace;font-size:0.9rem;font-weight:900;color:#fff;letter-spacing:0.08em;opacity:0;transition:all 0.5s cubic-bezier(.17,.67,.3,1.4);transform:scale(0.8);"></div>
-        </div>
-      </div>
     </div>
     <div class="calc-box">
       <div class="tool-label">◈ Kainų skaičiuoklė ◈</div>
@@ -194,6 +204,21 @@
     </div>
   </div>
   <footer>NS40 Premium Liquids &nbsp;·&nbsp; Gaminta su meile &nbsp;·&nbsp; 2026 &nbsp;·&nbsp; <a href="admin.html" style="color:rgba(255,255,255,0.08);text-decoration:none;letter-spacing:0.1em;">⚙</a></footer>
+</div>
+
+<!-- ROULETTE MODAL -->
+<div id="rouletteModal">
+  <div class="modal-inner">
+    <div class="modal-title">◈ SKONIŲ ROULETTE ◈</div>
+    <div id="modalStripOuter">
+      <div id="modalMarker"></div>
+      <div id="modalStrip"></div>
+    </div>
+    <div id="modalWon">
+      <div id="modalWonName"></div>
+    </div>
+    <button class="modal-close-btn" id="modalCloseBtn">UŽDARYTI</button>
+  </div>
 </div>
 <script>
 const SHEET_ID  = '13rcjuyYF0pMCZJvFNtRLQECkv873dqIlAsR81G4ubMY';
@@ -275,73 +300,103 @@ function renderGrid(list) {
   });
 }
 
-/* ── Roulette (CSGO style) ── */
-const ITEM_W = 116;
+/* ── Roulette (CSGO modal) ── */
+const ITEM_W = 136;
 const STRIP_COUNT = 60;
 let caseSpinning = false;
+let lastPick = null;
 
-function buildCaseStrip(winnerIdx, items) {
-  const strip = document.getElementById('caseStrip');
+function buildModalStrip(items) {
+  const strip = document.getElementById('modalStrip');
   strip.innerHTML = '';
   items.forEach(f => {
     const div = document.createElement('div');
-    div.style.cssText = 'flex-shrink:0;width:108px;height:80px;border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;border:1px solid rgba(0,245,255,0.2);background:rgba(0,245,255,0.03);padding:6px;';
-    div.innerHTML = `<div style="width:100%;height:2px;border-radius:2px;background:#00f5ff;box-shadow:0 0 6px #00f5ff;margin-bottom:4px;"></div><div style="font-family:'Orbitron',monospace;font-size:9px;font-weight:700;text-align:center;line-height:1.3;color:#fff;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">${f.name}</div>`;
+    div.className = 'modal-item';
+    div.innerHTML = `<div class="modal-item-bar"></div><div class="modal-item-name">${f.name}</div>`;
     strip.appendChild(div);
   });
 }
 
-document.getElementById('spinBtn').addEventListener('click', () => {
-  if (caseSpinning || inStock.length === 0) return;
-  caseSpinning = true;
-  const btn = document.getElementById('spinBtn');
-  const resultEl = document.getElementById('rouletteResult');
-  const caseDiv  = document.getElementById('caseOpening');
-  const wonName  = document.getElementById('caseWonName');
-  btn.disabled = true;
-
-  if (lastPick) { document.getElementById('card-' + lastPick)?.classList.remove('roulette-pick'); lastPick = null; }
-
-  resultEl.style.display = 'none';
-  caseDiv.style.display  = 'block';
-  wonName.style.opacity  = '0';
-  wonName.style.transform = 'scale(0.8)';
+function openRouletteModal() {
+  if (inStock.length === 0) return;
+  const modal = document.getElementById('rouletteModal');
+  const wonName = document.getElementById('modalWonName');
+  const closeBtn = document.getElementById('modalCloseBtn');
+  wonName.className = '';
+  wonName.textContent = '';
+  closeBtn.className = 'modal-close-btn';
+  modal.classList.add('show');
+  requestAnimationFrame(() => modal.classList.add('visible'));
 
   const winnerIdx = 44 + Math.floor(Math.random() * 8);
   const chosen = inStock[Math.floor(Math.random() * inStock.length)];
   const items = Array.from({length: STRIP_COUNT}, (_, i) => i === winnerIdx ? chosen : inStock[Math.floor(Math.random() * inStock.length)]);
-  buildCaseStrip(winnerIdx, items);
+  buildModalStrip(items);
 
-  const strip = document.getElementById('caseStrip');
-  const outer = document.getElementById('stripOuter');
+  const strip = document.getElementById('modalStrip');
+  const outer = document.getElementById('modalStripOuter');
   const centerOffset = outer.offsetWidth / 2;
-  const targetX = -(winnerIdx * ITEM_W + ITEM_W / 2 - centerOffset) + (Math.random() * 50 - 25);
+  const targetX = -(winnerIdx * ITEM_W + ITEM_W / 2 - centerOffset) + (Math.random() * 60 - 30);
 
   strip.style.transition = 'none';
   strip.style.transform  = 'translateX(0)';
 
   requestAnimationFrame(() => requestAnimationFrame(() => {
-    const dur = 4000 + Math.random() * 1500;
+    const dur = 4200 + Math.random() * 1500;
     strip.style.transition = `transform ${dur}ms cubic-bezier(0.05,0.8,0.3,1)`;
     strip.style.transform  = `translateX(${targetX}px)`;
 
     setTimeout(() => {
-      wonName.textContent     = chosen.name;
-      wonName.style.opacity   = '1';
-      wonName.style.transform = 'scale(1)';
-      wonName.style.color     = '#00f5ff';
-      wonName.style.filter    = 'drop-shadow(0 0 10px #00f5ff)';
+      wonName.textContent = chosen.name;
+      wonName.classList.add('show');
+      closeBtn.classList.add('show');
+      caseSpinning = false;
+      document.getElementById('spinBtn').disabled = false;
+
+      setTimeout(() => {
+        closeModal(chosen);
+      }, 2200);
+    }, dur + 200);
+  }));
+}
+
+function closeModal(chosen) {
+  const modal = document.getElementById('rouletteModal');
+  modal.classList.remove('visible');
+  setTimeout(() => {
+    modal.classList.remove('show');
+    if (chosen) {
+      if (lastPick) document.getElementById('card-' + lastPick)?.classList.remove('roulette-pick');
       lastPick = chosen.index;
       const card = document.getElementById('card-' + chosen.index);
       if (card) { card.classList.add('roulette-pick'); card.scrollIntoView({ behavior:'smooth', block:'center' }); }
-      caseSpinning = false;
-      btn.disabled = false;
-      btn.textContent = '🎰 SUKTI VĖL';
-    }, dur + 200);
-  }));
+      const r = document.getElementById('rouletteResult');
+      r.textContent = chosen.name;
+      r.className = 'result';
+    }
+  }, 300);
+}
+
+document.getElementById('spinBtn').addEventListener('click', () => {
+  if (caseSpinning || inStock.length === 0) return;
+  caseSpinning = true;
+  document.getElementById('spinBtn').disabled = true;
+  openRouletteModal();
 });
 
-let lastPick = null;
+document.getElementById('modalCloseBtn').addEventListener('click', () => {
+  const wonName = document.getElementById('modalWonName');
+  const chosen = wonName.textContent ? inStock.find(f => f.name === wonName.textContent) || null : null;
+  closeModal(chosen);
+});
+
+document.getElementById('rouletteModal').addEventListener('click', e => {
+  if (e.target === document.getElementById('rouletteModal') && !caseSpinning) {
+    const wonName = document.getElementById('modalWonName');
+    const chosen = wonName.textContent ? inStock.find(f => f.name === wonName.textContent) || null : null;
+    closeModal(chosen);
+  }
+});
 
 /* ── Calc ── */
 let qty = 1;

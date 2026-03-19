@@ -4,6 +4,13 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>NS40 — Premium Liquid Skoniai</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="favicon.ico">
+<meta name="theme-color" content="#00f5ff">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="NS40">
+<link rel="apple-touch-icon" href="icon-152x152.png">
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600&display=swap" rel="stylesheet">
 <style>
   :root {
@@ -260,9 +267,27 @@ async function loadFromSheets() {
     inStock  = flavours.filter(f => f.qty > 0);
     renderStats();
     renderGrid(flavours);
+    fetchLastUpdated();
   } catch (e) {
     document.getElementById('flavourGrid').innerHTML =
       '<div class="grid-error">⚠ Nepavyko įkelti duomenų.<br>Patikrink ar Sheet\'as viešas.</div>';
+  }
+}
+
+async function fetchLastUpdated() {
+  try {
+    const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&cachebust=${Date.now()}`;
+    const res  = await fetch(url);
+    const text = await res.text();
+    const json = JSON.parse(text.match(/google\.visualization\.Query\.setResponse\(([\s\S]*)\)/)[1]);
+    if (json && json.status === 'ok') {
+      const now = new Date();
+      const pad = n => String(n).padStart(2,'0');
+      const str = `${pad(now.getDate())}.${pad(now.getMonth()+1)}.${now.getFullYear()} ${pad(now.getHours())}:${pad(now.getMinutes())}`;
+      document.getElementById('lastUpdated').textContent = str;
+    }
+  } catch(e) {
+    document.getElementById('lastUpdated').textContent = '—';
   }
 }
 
@@ -272,7 +297,8 @@ function renderStats() {
   document.getElementById('statsBar').innerHTML = `
     <div class="stat-item"><div class="stat-value">${total}</div><div class="stat-label">Viso skonių</div></div>
     <div class="stat-item"><div class="stat-value">${avail}</div><div class="stat-label">Turimų</div></div>
-    <div class="stat-item"><div class="stat-value">${total - avail}</div><div class="stat-label">Išparduota</div></div>`;
+    <div class="stat-item"><div class="stat-value">${total - avail}</div><div class="stat-label">Išparduota</div></div>
+    <div class="stat-item"><div class="stat-value" style="font-size:clamp(0.8rem,2vw,1.1rem)" id="lastUpdated">...</div><div class="stat-label">Atnaujinta</div></div>`;
 }
 
 /* ── Grid ── */
@@ -474,6 +500,10 @@ document.addEventListener('keydown', e => {
 
 /* ── START ── */
 loadFromSheets();
+
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('service-worker.js');
+}
 </script>
 </body>
 </html>

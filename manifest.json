@@ -4,8 +4,8 @@
   "description": "NS40 Premium Liquid skonių sąrašas",
   "start_url": "/Vkusnoitochka/index.html",
   "display": "standalone",
-  "background_color": "#020408",
-  "theme_color": "#00f5ff",
+  "background_color": "#ebe4d1",
+  "theme_color": "#ebe4d1",
   "orientation": "portrait",
   "icons": [
     { "src": "icon-72x72.png",   "sizes": "72x72",   "type": "image/png" },

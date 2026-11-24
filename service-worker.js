@@ -1,4 +1,4 @@
-const CACHE = 'ns40-v1';
+const CACHE = 'ns40-v2';
 const ASSETS = [
   '/',
   '/index.html',
